@@ -2,14 +2,15 @@ pragma solidity ^0.8.0;
 
 // 10 percentage cut
 // 1000000000000000 baseprice (test 0.001 MATIC)
-// 100000000000000000000 baseprice (production 100 MATIC)
-// https://geo.superworldapp.com/api/json/metadata/get/ metaUrl
+// 100000000000000000000 baseprice (mainnet 100 MATIC)
+// https://geo.superworldapp.com/api/json/metadata/get/80001/ metaUrl (test)
+// https://geo.superworldapp.com/api/json/metadata/get/137/ metaUrl (mainnet)
+
 
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/release-v4.8/contracts/access/Ownable.sol";
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/release-v4.8/contracts/utils/math/SafeMath.sol";
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/release-v4.8/contracts/security/ReentrancyGuard.sol";
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/release-v4.8/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
-import "./Utils.sol";
 
 // SuperWorldToken contract inherits ERC721 and ownable contracts
 contract SuperWorldToken is ERC721Enumerable, Ownable, ReentrancyGuard {
@@ -97,7 +98,7 @@ contract SuperWorldToken is ERC721Enumerable, Ownable, ReentrancyGuard {
     // @return no return, mutator
     function setBasePrice(string memory lat, string memory lon, uint _basePrice) public onlyOwner() {
 		require(_basePrice > 0);
-		uint256 tokenId = uint256(Utils.getTokenId(lat, lon));
+		uint256 tokenId = uint256(getTokenId(lat, lon));
 		basePrices[tokenId] = _basePrice;
 	}
 
@@ -142,7 +143,7 @@ contract SuperWorldToken is ERC721Enumerable, Ownable, ReentrancyGuard {
             uint256 price
         )
     {
-        tokenId = Utils.getTokenId(lat, lon);
+        tokenId = getTokenId(lat, lon);
         uint256 intTokenId = uint256(tokenId);
         tokenOwner = _ownerOf(intTokenId);
         isOwned = _exists(intTokenId);
@@ -160,7 +161,7 @@ contract SuperWorldToken is ERC721Enumerable, Ownable, ReentrancyGuard {
     ) public onlyOwner() {
         require(bytes(geoIds).length != 0);
         uint256 n = 1;
-        for (uint256 pos = Utils.indexOfChar(geoIds, bytes1(";"), 0); pos != 0; pos = Utils.indexOfChar(geoIds, bytes1(";"), pos + 1)) {
+        for (uint256 pos = indexOfChar(geoIds, bytes1(";"), 0); pos != 0; pos = indexOfChar(geoIds, bytes1(";"), pos + 1)) {
             n++;
         }
         require(n == buyers.length);
@@ -183,10 +184,10 @@ contract SuperWorldToken is ERC721Enumerable, Ownable, ReentrancyGuard {
 
         uint256 pos = 0;
         for (uint256 i = 0; i < numTokens; i++) {
-            uint256 delim = Utils.indexOfChar(geoIds, bytes1(";"), pos);
-            string memory geoId = Utils.substring(geoIds, pos, delim);
-            lat[i] = Utils.getLat(geoId);
-            lon[i] = Utils.getLon(geoId);
+            uint256 delim = indexOfChar(geoIds, bytes1(";"), pos);
+            string memory geoId = substring(geoIds, pos, delim);
+            lat[i] = getLat(geoId);
+            lon[i] = getLon(geoId);
             pos = delim + 1;
         }
 
@@ -203,7 +204,7 @@ contract SuperWorldToken is ERC721Enumerable, Ownable, ReentrancyGuard {
         string memory lon,
         address buyer
     ) private {
-        uint256 tokenId = uint256(Utils.getTokenId(lat, lon));
+        uint256 tokenId = uint256(getTokenId(lat, lon));
         createToken(buyer, tokenId, basePrice);
         emitBuyTokenEvents(
             tokenId,
@@ -225,7 +226,7 @@ contract SuperWorldToken is ERC721Enumerable, Ownable, ReentrancyGuard {
         string memory lat,
         string memory lon
     ) public returns (bool) {
-        uint256 tokenId = uint256(Utils.getTokenId(lat, lon));
+        uint256 tokenId = uint256(getTokenId(lat, lon));
 
         if (!_exists(tokenId)) {
             // not owned
@@ -257,7 +258,7 @@ contract SuperWorldToken is ERC721Enumerable, Ownable, ReentrancyGuard {
     function buyTokens(string memory geoIds) public payable returns (bool) {
         require(bytes(geoIds).length != 0);
         uint256 n = 1;
-        for (uint256 pos = Utils.indexOfChar(geoIds, bytes1(";"), 0); pos != 0; pos = Utils.indexOfChar(geoIds, bytes1(";"), pos + 1)) {
+        for (uint256 pos = indexOfChar(geoIds, bytes1(";"), 0); pos != 0; pos = indexOfChar(geoIds, bytes1(";"), pos + 1)) {
             n++;
         }
         
@@ -280,13 +281,13 @@ contract SuperWorldToken is ERC721Enumerable, Ownable, ReentrancyGuard {
         uint256 totalPrice = 0;
         uint256 pos = 0;
         for (uint256 i = 0; i < numTokens; i++) {
-            uint256 delim = Utils.indexOfChar(geoIds, bytes1(";"), pos);
-            string memory geoId = Utils.substring(geoIds, pos, delim);
-            lat[i] = Utils.getLat(geoId);
-            lon[i] = Utils.getLon(geoId);
+            uint256 delim = indexOfChar(geoIds, bytes1(";"), pos);
+            string memory geoId = substring(geoIds, pos, delim);
+            lat[i] = getLat(geoId);
+            lon[i] = getLon(geoId);
             pos = delim + 1;
             
-            uint256 tokenId = uint256(Utils.getTokenId(lat[i], lon[i]));
+            uint256 tokenId = uint256(getTokenId(lat[i], lon[i]));
             prices[i] = getPrice(tokenId);
             totalPrice = SafeMath.add(totalPrice, prices[i]);
         }
@@ -317,7 +318,7 @@ contract SuperWorldToken is ERC721Enumerable, Ownable, ReentrancyGuard {
         private
         returns (bool)
     {
-        uint256 tokenId = uint256(Utils.getTokenId(lat, lon));
+        uint256 tokenId = uint256(getTokenId(lat, lon));
         
         // unique token not bought yet
         if (!_exists(tokenId)) {
@@ -370,7 +371,7 @@ contract SuperWorldToken is ERC721Enumerable, Ownable, ReentrancyGuard {
     // @return none
     function _beforeTokenTransfer(address from, address to, uint256 tokenId) internal virtual {
         super._beforeTokenTransfer(from, to, tokenId, 1);
-        (string memory lat, string memory lon) = Utils.getGeoFromTokenId(bytes32(tokenId));
+        (string memory lat, string memory lon) = getGeoFromTokenId(bytes32(tokenId));
         
         uint256 price = getPrice(tokenId);
         isListeds[tokenId] = false;
@@ -423,7 +424,7 @@ contract SuperWorldToken is ERC721Enumerable, Ownable, ReentrancyGuard {
         uint256 sellPrice,
         bool isListed
     ) public {
-        uint256 tokenId = uint256(Utils.getTokenId(lat, lon));
+        uint256 tokenId = uint256(getTokenId(lat, lon));
         require(_exists(tokenId));
         require(msg.sender == _ownerOf(tokenId));
         isListeds[tokenId] = isListed;
@@ -452,7 +453,7 @@ contract SuperWorldToken is ERC721Enumerable, Ownable, ReentrancyGuard {
         uint256 timestamp
     ) private {
         listId++;
-        bytes32 tokenId = Utils.getTokenId(lat, lon);
+        bytes32 tokenId = getTokenId(lat, lon);
         emit EventListToken(
             listId,
             _buyId,
@@ -495,19 +496,115 @@ contract SuperWorldToken is ERC721Enumerable, Ownable, ReentrancyGuard {
         return success;
     }
     
-    
     //  @dev Base URI for computing {tokenURI}.
     //  @return metaUrl
     function _baseURI() internal view virtual override returns (string memory) {
         return metaUrl;
     }
 
-    // @devs: gets the metadata URL for a token. (ERC165)
-    // @param tokenId
-    // @return string containing the URL where the token's metadata is stored
-    function tokenURI(uint256 tokenId) public view override returns (string memory) {
-        string memory x = string(abi.encodePacked(_baseURI(), '0x', Utils.toHexString(tokenId)));
-        return x;
+    // @dev provides the token id based on the coordinates(longitude and latitude) of the property
+    // @param a longitude string and a latitude string
+    // @return returns the token id as a 32 bit object, otherwise it returns a 0 as a hex if the lat and lon are empty
+    function getTokenId(string memory lat, string memory lon)
+        public
+        pure
+        returns (bytes32 tokenId)
+    {
+        if (bytes(lat).length == 0 || bytes(lon).length == 0) {
+            return 0x0;
+        }
+        
+        string memory geo = string(abi.encodePacked(lat, ",", lon));
+        assembly {
+            tokenId := mload(add(geo, 32))
+        }
+    }
+    
+    // @dev the opposite of the getTokenId, gives the lat and lon using tokenId
+    // @param takes in a 32 bit tokenId object.
+    // @return returns the latitude and longitude of a location
+    function getGeoFromTokenId(bytes32 tokenId)
+        public
+        pure
+        returns (
+            string memory lat,
+            string memory lon
+        )
+    {
+        uint256 n = 32;
+        while (n > 0 && tokenId[n-1] == 0) {
+            n--;
+        }
+        bytes memory bytesArray = new bytes(n);
+        for (uint256 i = 0; i < n; i++) {
+            bytesArray[i] = tokenId[i];
+        }
+        string memory geoId = string(bytesArray);
+        lat = getLat(geoId);
+        lon = getLon(geoId);
+    }
+    
+    // @dev gets the latitude of the token from a geoId
+    // @param takes in a string of form "Lat,Lon" as a parameter
+    // @return returns the str of the latitude
+    function getLat(string memory str) public pure returns (string memory) {
+        uint256 index = indexOfChar(str, bytes1(","), 0);
+        return substring(str, 0, index);
+    }
+
+    // @dev gets the longitude of the token from a geoId
+    // @param takes in a string of form "Lat,Lon" as a parameter
+    // @return returns the str of the longitude
+    function getLon(string memory str) public pure returns (string memory) {
+        uint256 index = indexOfChar(str, bytes1(","), 0);
+        return substring(str, index + 1, 0);
+    }
+
+        // @dev trims the decimals to a certain substring and gives it back
+    // @param takes in the string, and trims based on the decimal integer
+    // @return returns the substring based on the decimal values.
+    function truncateDecimals(string memory str, uint256 decimal)
+        public
+        pure
+        returns (string memory)
+    {
+        uint256 decimalIndex = indexOfChar(str, bytes1("."), 0);
+        bytes memory strBytes = bytes(str);
+        uint256 length = strBytes.length;
+        return (decimalIndex + decimal + 1 > length) ? substring(str, 0, length) : substring(str, 0, decimalIndex + decimal + 1);
+    }
+
+    // @dev standard substring method. Note that endIndex == 0 indicates the substring should be taken to the end of the string.
+    // @param takes in a string, and a starting (included) and ending index (not included in substring).
+    // @return substring
+    function substring(
+        string memory str,
+        uint256 startIndex,
+        uint256 endIndex
+    ) public pure returns (string memory) {
+        bytes memory strBytes = bytes(str);
+        if (endIndex == 0) {
+            endIndex = strBytes.length;
+        }
+        bytes memory result = new bytes(endIndex - startIndex);
+        for (uint256 i = startIndex; i < endIndex; i++) {
+            result[i - startIndex] = strBytes[i];
+        }
+        return string(result);
+    }
+
+    // @dev gets the index of a certain character inside of a string; helper method
+    // @param requires a string, a certain character, and the index to start checking from
+    // @return returns the index of the character in the string
+    function indexOfChar(string memory str, bytes1 char, uint256 startIndex) public pure returns (uint256) {
+        bytes memory strBytes = bytes(str);
+        uint256 length = strBytes.length;
+        for (uint256 i = startIndex; i < length; i++) {
+            if (strBytes[i] == char) {
+                return i;
+            }
+        }
+        return 0;
     }
 }   
 
