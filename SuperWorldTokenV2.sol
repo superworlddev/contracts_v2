@@ -369,22 +369,12 @@ contract SuperWorldToken is ERC721Enumerable, Ownable, ReentrancyGuard {
     // @dev Updates contract state before transferring a token.
     // @param addresses of transfer, tokenId of token to be transferred
     // @return none
-    function _beforeTokenTransfer(address from, address to, uint256 tokenId) internal virtual {
-        super._beforeTokenTransfer(from, to, tokenId, 1);
+    function _beforeTokenTransfer(address from, address to, uint256 tokenId, uint256 batchSize) internal override{
+        super._beforeTokenTransfer(from, to, tokenId, batchSize = 1);
         (string memory lat, string memory lon) = getGeoFromTokenId(bytes32(tokenId));
-        
-        uint256 price = getPrice(tokenId);
         isListeds[tokenId] = false;
+        uint256 price = getPrice(tokenId);
         recordTransaction(tokenId, price);
-        emitBuyTokenEvents(
-            tokenId,
-            lon,
-            lat,
-            to,
-            from,
-            price,
-            block.timestamp
-        );
         sellPrices[tokenId] = price;
     }
 
@@ -625,5 +615,5 @@ abstract contract ERC20Interface {
         public
         virtual
         view
-        returns (uint256 balance); //"constant" deprecated at 0.5.0
+        returns (uint256 balance);
 }
